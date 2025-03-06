@@ -4,7 +4,7 @@ class Note:
     def __init__(self, text, tags):
         self.text = text
         self.tags = tags
-        self.date = datetime.now().strftime("%Y-%m-%d")  # Убрано время (%H:%M:%S)
+        self.date = datetime.now().strftime("%Y-%m-%d")  # Убрано время (%H:%M:%S) пока что убрал переделаю потом фильтрацию
 
     def to_dict(self):
         return {
