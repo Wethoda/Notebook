@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import csv
 
 class Note:
     def __init__(self, text, tags):
@@ -10,7 +11,7 @@ class Note:
     def to_dict(self):
         return {
             "text": self.text,
-            "tags": self.tags,
+            "tags": ", ".join(self.tags),
             "date": self.date
         }
 
@@ -41,14 +42,14 @@ class Diary:
     def find_date(self, date):
         return [note.to_dict() for note in self.notes if note.date == date]
 
+    def find_text(self, text):
+        return [note.to_dict() for note in self.notes if text.lower() in note.text.lower()]
+
     def filter_by_date(self):
         return sorted(self.notes, key=lambda note: note.date)
 
     def find_tags(self, tag):
         return [note.to_dict() for note in self.notes if tag.lower() in [t.lower() for t in note.tags]]
-
-    def filter_by_tags(self):
-        return sorted(self.notes, key=lambda note: ", ".join(note.tags))
 
     def list_notes(self):
         return [note.to_dict() for note in self.notes]
@@ -58,16 +59,28 @@ class Diary:
         try:
             with open(filename, "w") as file:
                 json.dump(data, file, indent=4)
-            print("Заметки сохранены.")
+            print("Заметки сохранены в JSON.")
+        except Exception as e:
+            print(f"Ошибка при сохранении: {e}")
+
+    def save_to_csv(self, filename="notes.csv"):
+        data = [note.to_dict() for note in self.notes]
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as file:
+                fieldnames = ["text", "tags", "date"]
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(data)
+            print("Заметки сохранены в CSV.")
         except Exception as e:
             print(f"Ошибка при сохранении: {e}")
 
     def load_from_json(self, filename="notes.json"):
         try:
-            with open(filename, 'r') as file:
+            with open(filename, 'r', encoding='utf-8') as file:
                 data = json.load(file)
-                self.notes = [Note(note['text'], note['tags']) for note in data]
-            print("Заметки загружены.")
+                self.notes = [Note(note['text'], note['tags'].split(", ")) for note in data]
+            print("Заметки загружены из JSON.")
         except FileNotFoundError:
             print("Файл отсутствует!")
         except json.JSONDecodeError:
@@ -82,10 +95,11 @@ def main():
         print("3. Редактировать заметку")
         print("4. Фильтровать заметки по дате (формат YYYY-MM-DD)")
         print("5. Фильтровать заметки по тегу")
-        print("6. Сохранить заметки")
-        print("7. Загрузить заметки")
-        print("8. Просмотреть все заметки")
-        print("9. Выйти")
+        print("6. Поиск по тексту заметки")
+        print("7. Сохранить заметки")
+        print("8. Загрузить заметки")
+        print("9. Просмотреть все заметки")
+        print("10. Выйти")
         choice = input("Выберите действие: ")
 
         if choice == "1":
@@ -114,7 +128,7 @@ def main():
             filtered_notes = diary.find_date(date)
             if filtered_notes:
                 for note in filtered_notes:
-                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {', '.join(note['tags'])}")
+                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {note['tags']}")
             else:
                 print("Заметки не найдены.")
 
@@ -123,28 +137,43 @@ def main():
             filtered_notes = diary.find_tags(tag)
             if filtered_notes:
                 for note in filtered_notes:
-                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {', '.join(note['tags'])}")
+                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {note['tags']}")
             else:
                 print("Заметки не найдены.")
 
         elif choice == "6":
-            filename = input("Введите имя файла для сохранения: ")
-            diary.save_to_json(filename)
+            text = input("Введите текст заметки, которую ищете: ")
+            filtered_notes = diary.find_text(text)
+            if filtered_notes:
+                for note in filtered_notes:
+                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {note['tags']}")
+            else:
+                print("Заметки не найдены.")
 
         elif choice == "7":
+            format_choice = input("В каком формате вы хотите сохранить? (1 - JSON, 2 - CSV): ")
+            filename = input("Введите имя файла для сохранения: ")
+            if format_choice == "1":
+                diary.save_to_json(filename)
+            elif format_choice == "2":
+                diary.save_to_csv(filename)
+            else:
+                print("Ошибка: Некорректный выбор формата.")
+
+        elif choice == "8":
             filename = input("Введите имя файла для загрузки: ")
             diary.load_from_json(filename)
 
-        elif choice == "8":
+        elif choice == "9":
             notes = diary.list_notes()
             if notes:
                 print("Список всех заметок:")
                 for note in notes:
-                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {', '.join(note['tags'])}")
+                    print(f"Дата: {note['date']}, Текст: {note['text']}, Теги: {note['tags']}")
             else:
                 print("Заметок нет.")
 
-        elif choice == "9":
+        elif choice == "10":
             print("Выход из программы.")
             break
 
