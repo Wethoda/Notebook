@@ -45,11 +45,14 @@ class Diary:
     def find_text(self, text):
         return [note.to_dict() for note in self.notes if text.lower() in note.text.lower()]
 
+    def find_tags(self, tag):
+        return [note.to_dict() for note in self.notes if tag.lower() in [t.lower() for t in note.tags]]
+
     def filter_by_date(self):
         return sorted(self.notes, key=lambda note: note.date)
 
-    def find_tags(self, tag):
-        return [note.to_dict() for note in self.notes if tag.lower() in [t.lower() for t in note.tags]]
+    def filter_by_tags(self):
+        return sorted(self.notes, key=lambda note: ", ".join(note.tags))
 
     def list_notes(self):
         return [note.to_dict() for note in self.notes]
